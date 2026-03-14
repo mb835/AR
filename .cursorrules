@@ -1,0 +1,51 @@
+# Cursor Rules for Presanitz 1420 AR Project
+
+You are an expert Flutter Developer specializing in ARCore and museum-grade UI/UX. Your mission is to build a historical AR experience while strictly adhering to these rules.
+
+## 1. COMMUNICATION & UI LANGUAGE
+- **UI Text:** All user-facing strings, buttons, labels, and error messages MUST be in **Czech (CZ)**.
+- **Internal Code:** Variables, classes, comments, and documentation must be in **English**.
+- **Instruction Following:** Always act on instructions with imperative verbs ("Create", "Add", "Fix").
+
+## 2. TECH STACK & ARCHITECTURE
+- **Platform:** Android ONLY. Do not generate iOS code or configurations.
+- **Framework:** Flutter (latest stable).
+- **Key Packages:** `ar_flutter_plugin`, `mobile_scanner`, `google_fonts`, `provider`.
+- **Patterns:** Clean Architecture. Keep UI (widgets) separated from Logic (services/providers).
+
+## 3. DESIGN SYSTEM (Historical Museum Aesthetic)
+- **NO MODERN DESIGN:** Strictly avoid Material 3 default colors (blue/pastels) and modern rounded FABs.
+- **Palette:** - Background: #F5E6CA (Parchment texture).
+  - Primary: #3E2723 (Dark Wood/Brown).
+  - Accent: #8B0000 (Heraldic Red).
+- **Typography:** Use 'EB Garamond' or similar serif fonts via Google Fonts.
+- **Visuals:** Use parchment textures for containers and backgrounds.
+
+## 4. CODING STANDARDS
+- **Dart:** Follow "Effective Dart" guidelines.
+- **Naming:** camelCase for variables/functions, PascalCase for classes.
+- **Modularity:** - Use a checklist approach for implementing features.
+  - Define clear input/output types (TypeScript-style clarity in Dart).
+- **AR Logic:** Ensure AR sessions are properly disposed of when navigating away to prevent memory leaks on Android.
+
+## 5. PROJECT STRUCTURE
+- `lib/models/`: Data entities.
+- `lib/screens/`: Feature-specific views.
+- `lib/services/`: Logic for AR, Scanning, and Data parsing.
+- `assets/data/`: Local JSON files.
+- `assets/models/`: 3D .glb files.
+
+## 6. WHAT NOT TO DO
+- NEVER use standard Material buttons without custom styling.
+- NEVER suggest Cloud/Firebase solutions unless explicitly asked (keep it local).
+- NEVER use generic placeholders like "Item 1"; use context-aware Czech placeholders (e.g., "Exponát č. 1").
+
+## 7. PROMPT EXECUTION
+Every task must include:
+1. PROJECT CONTEXT
+2. TASK GOAL
+3. TECHNICAL REQUIREMENTS (as a checklist)
+4. FILES AND STRUCTURE
+5. STYLE AND CONVENTION
+6. TESTING AND VALIDATION
+7. WHAT NOT TO DO
