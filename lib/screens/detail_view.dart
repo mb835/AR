@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/exhibit.dart';
-import '../services/exhibit_service.dart';
+import '../services/data_service.dart';
 import 'ar_view.dart';
 
 /// Parchment-themed exhibit detail screen.
@@ -10,11 +10,11 @@ class DetailView extends StatelessWidget {
   const DetailView({
     super.key,
     required this.exhibit,
-    required this.exhibitService,
+    required this.dataService,
   });
 
   final Exhibit exhibit;
-  final ExhibitService exhibitService;
+  final DataService dataService;
 
   static const Color _parchment = Color(0xFFF5E6CA);
   static const Color _inkBlack = Color(0xFF1A1A1A);
@@ -44,13 +44,26 @@ class DetailView extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Text(
-                  exhibit.title,
-                  style: GoogleFonts.ebGaramond(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    color: _inkBlack,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exhibit.title,
+                      style: GoogleFonts.ebGaramond(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: _inkBlack,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Image.asset(
+                      exhibit.imagePath,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -81,31 +94,34 @@ class DetailView extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ARView(
-                exhibit: exhibit,
-                exhibitService: exhibitService,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            debugPrint('--- NAVIGACE: Přecházím na AR obrazovku ---');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ARView(
+                  exhibit: exhibit,
+                  dataService: dataService,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _darkWood,
+              border: Border.all(color: _heraldicRed, width: 2),
+            ),
+            child: Text(
+              'Zobrazit v AR',
+              style: GoogleFonts.ebGaramond(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: _parchment,
               ),
             ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _darkWood,
-          foregroundColor: _parchment,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: const BorderSide(color: _heraldicRed, width: 2),
-          ),
-        ),
-        child: Text(
-          'Zobrazit v AR',
-          style: GoogleFonts.ebGaramond(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

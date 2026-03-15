@@ -4,23 +4,26 @@ class Exhibit {
     required this.id,
     required this.title,
     required this.description,
+    required this.imagePath,
     required this.modelPath,
-    required this.markerId,
+    required this.markerPath,
   });
 
   final String id;
   final String title;
   final String description;
+  final String imagePath;
   final String modelPath;
-  final String markerId;
+  final String markerPath;
 
   factory Exhibit.fromJson(Map<String, dynamic> json) {
     return Exhibit(
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String,
+      imagePath: json['image_path'] as String,
       modelPath: json['model_path'] as String,
-      markerId: json['marker_id'] as String,
+      markerPath: json['marker_path'] as String,
     );
   }
 
@@ -28,7 +31,8 @@ class Exhibit {
         'id': id,
         'title': title,
         'description': description,
+        'image_path': imagePath,
         'model_path': modelPath,
-        'marker_id': markerId,
+        'marker_path': markerPath,
       };
 }

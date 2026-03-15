@@ -5,17 +5,17 @@ import 'package:flutter/services.dart';
 import '../models/exhibit.dart';
 
 /// Service for loading and resolving exhibit data from local JSON.
-class ExhibitService {
+class DataService {
   static const String _exhibitsPath = 'assets/data/exhibits.json';
 
   List<Exhibit>? _exhibits;
 
   /// Loads exhibits from JSON. Call once at app startup.
   Future<void> loadExhibits() async {
-    final String jsonString =
-        await rootBundle.loadString(_exhibitsPath);
-    final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
-    _exhibits = jsonList
+    final String jsonString = await rootBundle.loadString(_exhibitsPath);
+    final Map<String, dynamic> json = jsonDecode(jsonString) as Map<String, dynamic>;
+    final List<dynamic> exhibitsList = json['exhibits'] as List<dynamic>;
+    _exhibits = exhibitsList
         .map((e) => Exhibit.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -28,11 +28,5 @@ class ExhibitService {
     } on StateError {
       return null;
     }
-  }
-
-  /// Returns tracking image path for given marker ID.
-  /// Matches marker_id to assets/images/marker_{marker_id}.png
-  String getTrackingImagePath(String markerId) {
-    return 'assets/images/marker_$markerId.png';
   }
 }

@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/exhibit.dart';
-import '../services/exhibit_service.dart';
-import 'detail_view.dart';
+import '../services/data_service.dart';
+import 'ar_view.dart';
 
 /// QR scanner screen with medieval-style frame overlay.
+/// Permission-first: blocks until camera is granted.
 class ScannerView extends StatefulWidget {
   const ScannerView({
     super.key,
-    required this.exhibitService,
+    required this.dataService,
   });
 
-  final ExhibitService exhibitService;
+  final DataService dataService;
 
   @override
   State<ScannerView> createState() => _ScannerViewState();
@@ -23,36 +26,73 @@ class _ScannerViewState extends State<ScannerView> {
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
-    torchEnabled: false,
   );
 
+  bool _hasPermission = false;
   bool _isProcessing = false;
+  String lastScanned = 'Nic naskenováno';
+
+  @override
+  void initState() {
+    super.initState();
+    _requestCameraPermission();
+  }
+
+  Future<void> _requestCameraPermission() async {
+    final result = await Permission.camera.request();
+    if (mounted) {
+      setState(() => _hasPermission = result.isGranted);
+    }
+  }
 
   void _onDetect(BarcodeCapture capture) {
     if (_isProcessing) return;
-    final List<Barcode> barcodes = capture.barcodes;
+
+    final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
 
-    final String? raw = barcodes.first.rawValue;
-    if (raw == null || raw.isEmpty) return;
+    final String code = barcodes.first.rawValue ?? '';
+    if (code.isEmpty) return;
 
-    final String id = raw.trim();
-    final Exhibit? exhibit = widget.exhibitService.getExhibitById(id);
-    if (exhibit == null) return;
+    final String? exhibitId = _resolveExhibitId(code);
+    if (exhibitId == null) return;
+
+    final Exhibit? exhibit = widget.dataService.getExhibitById(exhibitId);
+    if (exhibit == null || !mounted) return;
 
     _isProcessing = true;
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      _isProcessing = false;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => DetailView(
-            exhibit: exhibit,
-            exhibitService: widget.exhibitService,
-          ),
+    HapticFeedback.lightImpact();
+    debugPrint('--- DETEKCE: $code -> exponát $exhibitId ---');
+
+    _handleScanAndNavigate(exhibit);
+  }
+
+  Future<void> _handleScanAndNavigate(Exhibit exhibit) async {
+    await _controller.pause();
+    if (!mounted) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => ARView(
+          exhibit: exhibit,
+          dataService: widget.dataService,
         ),
-      );
-    });
+      ),
+    );
+
+    if (!mounted) return;
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    await _controller.start();
+    if (mounted) setState(() => _isProcessing = false);
+  }
+
+  /// Mapuje QR obsah na ID exponátu.
+  String? _resolveExhibitId(String code) {
+    if (code.contains('extensia.cz')) return 'kostel_01';
+    if (code == 'kostel_01' || code.endsWith('kostel_01')) return 'kostel_01';
+    return null;
   }
 
   @override
@@ -63,6 +103,60 @@ class _ScannerViewState extends State<ScannerView> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('--- UI: Scanner View se vykresluje ---');
+
+    if (!_hasPermission) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5E6CA),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.camera_alt_outlined,
+                  size: 80,
+                  color: Color(0xFF3E2723),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Aplikace potřebuje přístup ke kameře pro skenování QR kódů.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 20,
+                    color: const Color(0xFF3E2723),
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => openAppSettings(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B0000),
+                      foregroundColor: const Color(0xFFF5E6CA),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Povolit kameru v nastavení',
+                      style: GoogleFonts.ebGaramond(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
@@ -71,8 +165,28 @@ class _ScannerViewState extends State<ScannerView> {
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
-            errorBuilder: (context, error) => _buildErrorView(error),
+            errorBuilder: (context, error, child) => _buildErrorView(error),
             overlayBuilder: _buildMedievalOverlay,
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                color: Colors.black.withValues(alpha: 0.6),
+                child: Text(
+                  'Stav: $lastScanned',
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 16,
+                    color: const Color(0xFFF5E6CA),
+                  ),
+                ),
+              ),
+            ),
           ),
           SafeArea(
             child: Padding(
@@ -92,7 +206,7 @@ class _ScannerViewState extends State<ScannerView> {
                     'Namiřte kameru na QR kód exponátu',
                     style: GoogleFonts.ebGaramond(
                       fontSize: 16,
-                      color: const Color(0xFFF5E6CA).withOpacity(0.9),
+                      color: const Color(0xFFF5E6CA).withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -104,7 +218,8 @@ class _ScannerViewState extends State<ScannerView> {
     );
   }
 
-  Widget _buildMedievalOverlay(BuildContext context, BoxConstraints constraints) {
+  Widget _buildMedievalOverlay(
+      BuildContext context, BoxConstraints constraints) {
     final Size size = Size(constraints.maxWidth, constraints.maxHeight);
     return CustomPaint(
       painter: MedievalFramePainter(size: size),
@@ -115,7 +230,7 @@ class _ScannerViewState extends State<ScannerView> {
   Widget _buildErrorView(MobileScannerException error) {
     String message = 'Kamera není k dispozici';
     if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
-      message = 'Přístup ke kameře byl odepřen. Povolte kameru v nastavení.';
+      message = 'Aplikace vyžaduje přístup ke kameře pro fungování AR.';
     } else if (error.errorCode == MobileScannerErrorCode.unsupported) {
       message = 'Toto zařízení nepodporuje skenování.';
     }
@@ -126,10 +241,10 @@ class _ScannerViewState extends State<ScannerView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.camera_alt_outlined,
               size: 64,
-              color: const Color(0xFF8B0000),
+              color: Color(0xFF8B0000),
             ),
             const SizedBox(height: 16),
             Text(
@@ -178,13 +293,14 @@ class MedievalFramePainter extends CustomPainter {
       ..strokeWidth = frameWidth;
 
     final Paint fillPaint = Paint()
-      ..color = Colors.black.withOpacity(0.4)
+      ..color = Colors.black.withValues(alpha: 0.4)
       ..style = PaintingStyle.fill;
 
     final Path outerPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final Path innerPath = Path()..addRect(scanRect);
-    final Path framePath = Path.combine(PathOperation.difference, outerPath, innerPath);
+    final Path framePath =
+        Path.combine(PathOperation.difference, outerPath, innerPath);
     canvas.drawPath(framePath, fillPaint);
 
     canvas.drawRect(scanRect.deflate(frameWidth / 2), framePaint);
@@ -194,7 +310,7 @@ class MedievalFramePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
 
-    final double cornerLen = cornerSize;
+    const double cornerLen = cornerSize;
     final double left = scanRect.left;
     final double right = scanRect.right;
     final double top = scanRect.top;

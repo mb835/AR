@@ -1,9 +1,12 @@
-[
-  {
-    "id": "kostel_01",
-    "title": "Kostel sv. Jakuba",
-    "description": "Historický kostel svatého Jakuba v Příbrami, památka z období husitských válek. Bitva u Příbrami v roce 1420 představovala významnou konfrontaci mezi husitskými vojsky a katolickou šlechtou. Kostel byl svědkem těchto dramatických událostí a dodnes připomíná bohatou historii regionu.",
-    "model_path": "assets/models/kostel.glb",
-    "marker_id": "kostel_01"
-  }
-]
+{
+  "exhibits": [
+    {
+      "id": "kostel_01",
+      "title": "Kostel sv. Mikuláše",
+      "description": "Tento opevněný kostel představuje unikátní architekturu z roku 1420. Během husitských válek sloužil jako klíčový bod obrany města.",
+      "image_path": "assets/images/ui/church_preview.jpg",
+      "model_path": "assets/models/kostel.glb",
+      "marker_path": "assets/images/markers/qr_marker.png"
+    }
+  ]
+}
